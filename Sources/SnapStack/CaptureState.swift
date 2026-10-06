@@ -16,7 +16,7 @@ final class CaptureState: ObservableObject {
     @Published private(set) var isPasting = false
     @Published private(set) var targetName = "请先选择目标应用"
     @Published var draggingID: UUID?
-    @Published var message = "按 ⌃⌥⌘S 截取区域，可连续截图。"
+    @Published var message = "按 ⌃⇧S 截取区域，可连续截图。"
 
     var isBusy: Bool { isCapturing || isPasting }
 
@@ -88,7 +88,7 @@ final class CaptureState: ObservableObject {
             return
         }
         items.append(ScreenshotItem(id: id, fileURL: fileURL, thumbnail: thumbnail))
-        message = "已收集 \(items.count) 张截图，可继续按 ⌃⌥⌘S。"
+        message = "已收集 \(items.count) 张截图，可继续按 ⌃⇧S。"
         FileHandle.standardOutput.write(Data("SnapStack: captured image \(items.count).\n".utf8))
     }
 
@@ -107,7 +107,7 @@ final class CaptureState: ObservableObject {
         let item = items.remove(at: index)
         if draggingID == id { draggingID = nil }
         try? FileManager.default.removeItem(at: item.fileURL)
-        message = items.isEmpty ? "队列为空，按 ⌃⌥⌘S 开始截图。" : "已删除，剩余 \(items.count) 张。"
+        message = items.isEmpty ? "队列为空，按 ⌃⇧S 开始截图。" : "已删除，剩余 \(items.count) 张。"
     }
 
     func move(_ id: UUID, beforeOrAfter destinationID: UUID) {
@@ -124,7 +124,7 @@ final class CaptureState: ObservableObject {
         for item in items { try? FileManager.default.removeItem(at: item.fileURL) }
         items.removeAll()
         draggingID = nil
-        message = "已清空，按 ⌃⌥⌘S 继续截图。"
+        message = "已清空，按 ⌃⇧S 继续截图。"
     }
 
     func pasteAll() {

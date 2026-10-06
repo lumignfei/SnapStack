@@ -58,7 +58,7 @@ struct ScreenshotBarView: View {
                     Label("截图", systemImage: "plus.viewfinder")
                 }
                 .disabled(state.isBusy)
-                .help("区域截图 ⌃⌥⌘S")
+                .help("区域截图 ⌃⇧S")
                 Button("全部粘贴") { state.pasteAll() }
                     .buttonStyle(.borderedProminent)
                     .disabled(state.items.isEmpty || state.isBusy)

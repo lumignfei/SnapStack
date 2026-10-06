@@ -6,9 +6,9 @@ SnapStack 是一个原生 macOS 小工具，用 SwiftUI + AppKit 实现。截图
 
 ## 下载与安装
 
-**[下载 v0.1.0 预览版](https://github.com/lumignfei/SnapStack/releases/tag/v0.1.0)** · [全部版本](https://github.com/lumignfei/SnapStack/releases)
+**[下载 v0.1.1 预览版](https://github.com/lumignfei/SnapStack/releases/tag/v0.1.1)** · [全部版本](https://github.com/lumignfei/SnapStack/releases)
 
-1. 在 Release 的 **Assets** 中下载 `SnapStack-0.1.0-macOS-universal.zip`。`Source code` 是源码压缩包，不是安装包。
+1. 在 Release 的 **Assets** 中下载 `SnapStack-0.1.1-macOS-universal.zip`。`Source code` 是源码压缩包，不是安装包。
 2. 解压，将 `SnapStack.app` 放进“应用程序”文件夹，然后双击打开。
 3. 首次截图时，在“系统设置 → 隐私与安全性 → 屏幕录制”（部分系统显示为“录屏与系统录音”）允许 SnapStack。
 4. 首次粘贴时，允许“辅助功能”权限（部分系统显示为“设备控制和数据访问”）。按系统提示退出并重新打开应用。
@@ -19,7 +19,7 @@ SnapStack 是一个原生 macOS 小工具，用 SwiftUI + AppKit 实现。截图
 
 ## 使用
 
-1. **先打开 SnapStack**，然后按 **⌃⌥⌘S**（Control + Option + Command + S），拖选截图区域；重复操作可连续收集多张。
+1. **先打开 SnapStack**，然后按 **⌃⇧S**（Control + Shift + S），拖选截图区域；重复操作可连续收集多张。
 2. 悬浮栏横向显示缩略图。点击右上角叉号删除单张；从图片中部拖到另一张图的位置调整顺序。
 3. 点击目标应用中需要粘贴的位置，确认悬浮栏底部“目标”显示正确应用。
 4. 点击一次 **全部粘贴**。每张图片依次写入系统剪贴板、激活固定目标并发送 Command-V；每张发送后等待 **400ms**。

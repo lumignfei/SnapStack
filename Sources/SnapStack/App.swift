@@ -51,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.setAccessibilityLabel("SnapStack 连截")
         item.isVisible = true
         let menu = NSMenu()
-        let capture = NSMenuItem(title: "区域截图（⌃⌥⌘S）", action: #selector(captureArea), keyEquivalent: "")
+        let capture = NSMenuItem(title: "区域截图（⌃⇧S）", action: #selector(captureArea), keyEquivalent: "")
         capture.target = self
         menu.addItem(capture)
         let show = NSMenuItem(title: "显示截图栏", action: #selector(showBar), keyEquivalent: "")

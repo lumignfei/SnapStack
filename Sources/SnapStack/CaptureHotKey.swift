@@ -25,7 +25,7 @@ final class CaptureHotKey {
             return noErr
         }, 1, &eventType, context, &handlerRef)
         guard installed == noErr else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(installed)) }
-        let status = RegisterEventHotKey(UInt32(kVK_ANSI_S), UInt32(controlKey | optionKey | cmdKey),
+        let status = RegisterEventHotKey(UInt32(kVK_ANSI_S), UInt32(controlKey | shiftKey),
             EventHotKeyID(signature: 0x534E4150, id: 1), GetApplicationEventTarget(),
             OptionBits(kEventHotKeyExclusive), &hotKeyRef)
         guard status == noErr else {
