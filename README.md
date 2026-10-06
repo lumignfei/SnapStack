@@ -6,7 +6,7 @@ SnapStack 是一个原生 macOS 小工具，用 SwiftUI + AppKit 实现。截图
 
 ## 下载与安装
 
-**[下载最新版本](https://github.com/lumignfei/SnapStack/releases/latest)**
+**[下载 v0.1.0 预览版](https://github.com/lumignfei/SnapStack/releases/tag/v0.1.0)** · [全部版本](https://github.com/lumignfei/SnapStack/releases)
 
 1. 在 Release 的 **Assets** 中下载 `SnapStack-0.1.0-macOS-universal.zip`。`Source code` 是源码压缩包，不是安装包。
 2. 解压，将 `SnapStack.app` 放进“应用程序”文件夹，然后双击打开。
