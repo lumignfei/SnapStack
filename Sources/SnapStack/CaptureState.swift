@@ -9,6 +9,10 @@ struct ScreenshotItem: Identifiable {
     let thumbnail: NSImage
 }
 
+enum CaptureOutcome {
+    case success, cancelled, failed
+}
+
 @MainActor
 final class CaptureState: ObservableObject {
     @Published private(set) var items: [ScreenshotItem] = []
@@ -21,7 +25,8 @@ final class CaptureState: ObservableObject {
     var isBusy: Bool { isCapturing || isPasting }
 
     var onCaptureWillStart: (() -> Void)?
-    var onCaptureFinished: (() -> Void)?
+    var onCaptureFinished: ((CaptureOutcome) -> Void)?
+    var onQueueBecameEmpty: (() -> Void)?
     private var captureProcess: Process?
     private let pasteManager = PasteManager()
     private let sessionDirectory = FileManager.default.temporaryDirectory
@@ -38,6 +43,7 @@ final class CaptureState: ObservableObject {
         guard CGPreflightScreenCaptureAccess() else {
             _ = CGRequestScreenCaptureAccess()
             message = "请允许 SnapStack 的屏幕录制权限，再次点击截图。"
+            onCaptureFinished?(.failed)
             return
         }
         isCapturing = true
@@ -61,25 +67,43 @@ final class CaptureState: ObservableObject {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
             process.arguments = ["-i", "-s", "-x", "-t", "png", fileURL.path]
+            let errors = Pipe()
+            process.standardError = errors
             process.terminationHandler = { [weak self] finished in
                 let status = finished.terminationStatus
-                Task { @MainActor in self?.finishCapture(id: id, fileURL: fileURL, status: status) }
+                let errorText = String(data: errors.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                let exitedNormally = finished.terminationReason == .exit
+                Task { @MainActor in
+                    self?.finishCapture(id: id, fileURL: fileURL, status: status,
+                                        errorText: errorText, exitedNormally: exitedNormally)
+                }
             }
             captureProcess = process
             try process.run()
         } catch {
-            finishCapture(id: id, fileURL: fileURL, status: -1)
-            message = "截图未能启动：\(error.localizedDescription)"
+            finishCapture(id: id, fileURL: fileURL, status: -1, errorText: error.localizedDescription)
         }
     }
 
-    private func finishCapture(id: UUID, fileURL: URL, status: Int32) {
+    private func finishCapture(id: UUID, fileURL: URL, status: Int32,
+                               errorText: String = "", exitedNormally: Bool = true) {
         captureProcess = nil
         isCapturing = false
-        defer { onCaptureFinished?() }
+        var outcome = CaptureOutcome.failed
+        defer { onCaptureFinished?(outcome) }
         guard status == 0, FileManager.default.fileExists(atPath: fileURL.path) else {
             try? FileManager.default.removeItem(at: fileURL)
-            message = status == -1 ? "截图未能启动。" : "截图已取消，队列保持不变。"
+            let details = errorText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !CGPreflightScreenCaptureAccess() {
+                message = "屏幕录制权限未生效，请在系统设置允许 SnapStack 后重新打开。"
+            // Esc can return 0 without a PNG, as well as the older non-zero cancellation exit.
+            } else if (status == 0 || status == 1), exitedNormally,
+                      details.isEmpty || details.localizedCaseInsensitiveContains("cancel") {
+                outcome = .cancelled
+                message = "截图已取消，队列保持不变。"
+            } else {
+                message = details.isEmpty ? "截图失败，请重试。" : "截图失败：\(details)"
+            }
             return
         }
         guard let thumbnail = makeThumbnail(fileURL) else {
@@ -88,6 +112,7 @@ final class CaptureState: ObservableObject {
             return
         }
         items.append(ScreenshotItem(id: id, fileURL: fileURL, thumbnail: thumbnail))
+        outcome = .success
         message = "已收集 \(items.count) 张截图，可继续按 ⌃⇧S。"
         FileHandle.standardOutput.write(Data("SnapStack: captured image \(items.count).\n".utf8))
     }
@@ -108,6 +133,7 @@ final class CaptureState: ObservableObject {
         if draggingID == id { draggingID = nil }
         try? FileManager.default.removeItem(at: item.fileURL)
         message = items.isEmpty ? "队列为空，按 ⌃⇧S 开始截图。" : "已删除，剩余 \(items.count) 张。"
+        if items.isEmpty { onQueueBecameEmpty?() }
     }
 
     func move(_ id: UUID, beforeOrAfter destinationID: UUID) {
@@ -125,6 +151,7 @@ final class CaptureState: ObservableObject {
         items.removeAll()
         draggingID = nil
         message = "已清空，按 ⌃⇧S 继续截图。"
+        onQueueBecameEmpty?()
     }
 
     func pasteAll() {

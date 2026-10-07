@@ -4,9 +4,15 @@ import SwiftUI
 @MainActor
 final class FloatingBarController {
     private let panel: ScreenshotPanel
+    private let presentation = BarPresentation()
+    private var expandedBeforeCapture: Bool?
+    private static let expandedSize = NSSize(width: 650, height: 215)
+    private static let collapsedSize = NSSize(width: 56, height: 48)
+
+    var isExpanded: Bool { presentation.isExpanded }
 
     init(state: CaptureState) {
-        let size = NSSize(width: 650, height: 215)
+        let size = Self.collapsedSize
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
         panel = ScreenshotPanel(contentRect: NSRect(
             x: screen.maxX - size.width - 24, y: screen.minY + 24, width: size.width, height: size.height),
@@ -21,14 +27,86 @@ final class FloatingBarController {
         panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.hasShadow = true
-        let host = ScreenshotHostingView(rootView: ScreenshotBarView(state: state))
+        let host = ScreenshotHostingView(rootView: FloatingBarRootView(
+            state: state, presentation: presentation,
+            onExpand: { [weak self] in self?.show() },
+            onCollapse: { [weak self] in self?.collapse() }))
         host.frame = NSRect(origin: .zero, size: size)
         host.autoresizingMask = [.width, .height]
         panel.contentView = host
     }
 
-    func show() { panel.orderFrontRegardless() }
-    func hide() { panel.orderOut(nil) }
+    func show() { setExpanded(true) }
+    func collapse() { setExpanded(false) }
+    func toggle() { setExpanded(!isExpanded) }
+    func present() { panel.orderFrontRegardless() }
+
+    func beginCapture() {
+        expandedBeforeCapture = isExpanded
+        panel.orderOut(nil)
+    }
+
+    func finishCapture(_ outcome: CaptureOutcome) {
+        let previous = expandedBeforeCapture ?? isExpanded
+        expandedBeforeCapture = nil
+        switch outcome {
+        case .success, .failed: show()
+        case .cancelled: setExpanded(previous)
+        }
+    }
+
+    private func setExpanded(_ expanded: Bool) {
+        guard expandedBeforeCapture == nil else { return }
+        let size = expanded ? Self.expandedSize : Self.collapsedSize
+        let frame = panel.frame
+        var next = NSRect(x: frame.maxX - size.width, y: frame.minY,
+                          width: size.width, height: size.height)
+        let screen = panel.screen ?? NSScreen.main
+        if let visible = screen?.visibleFrame {
+            next.origin.x = min(max(next.minX, visible.minX), max(visible.minX, visible.maxX - size.width))
+            next.origin.y = min(max(next.minY, visible.minY), max(visible.minY, visible.maxY - size.height))
+        }
+        presentation.isExpanded = expanded
+        panel.setFrame(next, display: true)
+        panel.orderFrontRegardless()
+    }
+}
+
+@MainActor
+private final class BarPresentation: ObservableObject {
+    @Published var isExpanded = false
+}
+
+private struct FloatingBarRootView: View {
+    @ObservedObject var state: CaptureState
+    @ObservedObject var presentation: BarPresentation
+    let onExpand: () -> Void
+    let onCollapse: () -> Void
+
+    var body: some View {
+        if presentation.isExpanded {
+            ScreenshotBarView(state: state, onCollapse: onCollapse)
+        } else {
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.regularMaterial)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.12)))
+                Image(systemName: "rectangle.stack.fill")
+                    .font(.system(size: 22)).foregroundStyle(.blue)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if !state.items.isEmpty {
+                    Text("\(state.items.count)")
+                        .font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
+                        .padding(.horizontal, 4).padding(.vertical, 1)
+                        .background(.blue, in: Capsule())
+                        .padding(2)
+                }
+            }
+            .padding(3)
+            .accessibilityHidden(true)
+            .overlay(CollapsedBarHandle(count: state.items.count, onExpand: onExpand))
+        }
+    }
 }
 
 private final class ScreenshotPanel: NSPanel {
@@ -36,13 +114,14 @@ private final class ScreenshotPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-private final class ScreenshotHostingView: NSHostingView<ScreenshotBarView> {
+private final class ScreenshotHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override var needsPanelToBecomeKey: Bool { false }
 }
 
 struct ScreenshotBarView: View {
     @ObservedObject var state: CaptureState
+    let onCollapse: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -68,6 +147,11 @@ struct ScreenshotBarView: View {
                 Button("退出") { NSApplication.shared.terminate(nil) }
                     .disabled(state.isBusy)
                     .help("退出 SnapStack")
+                Button(action: onCollapse) {
+                    Image(systemName: "chevron.down")
+                }
+                .help("收起为小悬浮按钮，截图队列保留")
+                .accessibilityLabel("收起截图栏")
             }
 
             if state.items.isEmpty {
@@ -123,6 +207,74 @@ struct ScreenshotBarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.primary.opacity(0.1)))
+    }
+}
+
+private struct CollapsedBarHandle: NSViewRepresentable {
+    let count: Int
+    let onExpand: () -> Void
+
+    func makeNSView(context: Context) -> CollapsedBarDragView {
+        let view = CollapsedBarDragView()
+        updateNSView(view, context: context)
+        return view
+    }
+
+    func updateNSView(_ view: CollapsedBarDragView, context: Context) {
+        view.onExpand = onExpand
+        view.setAccessibilityLabel("展开连截截图栏，\(count) 张截图")
+        view.toolTip = "点击展开截图栏，拖动可移动；区域截图 ⌃⇧S"
+    }
+}
+
+private final class CollapsedBarDragView: NSView {
+    var onExpand: (() -> Void)?
+    private var startPoint: NSPoint?
+    private var startOrigin: NSPoint?
+    private var didDrag = false
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override var needsPanelToBecomeKey: Bool { false }
+    override func accessibilityPerformPress() -> Bool {
+        onExpand?()
+        return true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        startPoint = window?.convertPoint(toScreen: event.locationInWindow)
+        startOrigin = window?.frame.origin
+        didDrag = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let window, let startPoint, let startOrigin else { return }
+        let point = window.convertPoint(toScreen: event.locationInWindow)
+        let dx = point.x - startPoint.x
+        let dy = point.y - startPoint.y
+        guard didDrag || hypot(dx, dy) > 4 else { return }
+        didDrag = true
+        var origin = NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy)
+        let screen = NSScreen.screens.first { $0.frame.contains(point) } ?? window.screen
+        if let visible = screen?.visibleFrame {
+            origin.x = min(max(origin.x, visible.minX), max(visible.minX, visible.maxX - window.frame.width))
+            origin.y = min(max(origin.y, visible.minY), max(visible.minY, visible.maxY - window.frame.height))
+        }
+        window.setFrameOrigin(origin)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let shouldExpand = startPoint != nil && !didDrag
+        startPoint = nil
+        startOrigin = nil
+        didDrag = false
+        if shouldExpand { onExpand?() }
     }
 }
 

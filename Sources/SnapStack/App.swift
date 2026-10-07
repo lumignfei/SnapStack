@@ -14,7 +14,7 @@ enum SnapStackApp {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let state = CaptureState()
     private var floatingBar: FloatingBarController?
     private var hotKey: CaptureHotKey?
@@ -24,14 +24,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.setActivationPolicy(.accessory)
         let bar = FloatingBarController(state: state)
         floatingBar = bar
-        state.onCaptureWillStart = { [weak bar] in bar?.hide() }
-        state.onCaptureFinished = { [weak bar] in bar?.show() }
+        state.onCaptureWillStart = { [weak bar] in bar?.beginCapture() }
+        state.onCaptureFinished = { [weak bar] result in bar?.finishCapture(result) }
+        state.onQueueBecameEmpty = { [weak bar] in bar?.collapse() }
         installMenuBar()
         let hotKey = CaptureHotKey { [weak self] in self?.state.capture() }
         self.hotKey = hotKey
         do { try hotKey.register() }
-        catch { state.message = "快捷键注册失败，请使用截图按钮。" }
-        bar.show()
+        catch {
+            state.message = "快捷键注册失败，请使用截图按钮。"
+            bar.show()
+        }
+        bar.present()
         FileHandle.standardOutput.write(Data("SnapStack: floating bar ready.\n".utf8))
     }
 
@@ -54,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let capture = NSMenuItem(title: "区域截图（⌃⇧S）", action: #selector(captureArea), keyEquivalent: "")
         capture.target = self
         menu.addItem(capture)
-        let show = NSMenuItem(title: "显示截图栏", action: #selector(showBar), keyEquivalent: "")
+        let show = NSMenuItem(title: "展开截图栏", action: #selector(toggleBar), keyEquivalent: "")
         show.target = self
         menu.addItem(show)
         menu.addItem(.separator())
@@ -66,5 +70,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func captureArea() { state.capture() }
-    @objc private func showBar() { floatingBar?.show() }
+    @objc private func toggleBar() { floatingBar?.toggle() }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(toggleBar) {
+            menuItem.title = floatingBar?.isExpanded == true ? "收起截图栏" : "展开截图栏"
+            return !state.isCapturing
+        }
+        if menuItem.action == #selector(captureArea) { return !state.isBusy }
+        return true
+    }
 }
