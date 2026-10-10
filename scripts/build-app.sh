@@ -3,6 +3,7 @@ set -euo pipefail
 
 SNAPSTACK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SNAPSTACK_CONFIGURATION="${1:-debug}"
+SNAPSTACK_SIGNING_IDENTITY="${SNAPSTACK_SIGNING_IDENTITY:--}"
 SNAPSTACK_BUILD="$SNAPSTACK_ROOT/.build"
 SNAPSTACK_APP="$SNAPSTACK_ROOT/dist/SnapStack.app"
 SNAPSTACK_STAGING="$SNAPSTACK_BUILD/package/SnapStack.app"
@@ -35,15 +36,19 @@ rm -rf "$SNAPSTACK_STAGING"
 mkdir -p "$SNAPSTACK_STAGING/Contents/MacOS" "$SNAPSTACK_STAGING/Contents/Resources"
 cp "$SNAPSTACK_BIN/SnapStack" "$SNAPSTACK_STAGING/Contents/MacOS/SnapStack"
 cp "$SNAPSTACK_ROOT/Resources/Info.plist" "$SNAPSTACK_STAGING/Contents/Info.plist"
+cp "$SNAPSTACK_ROOT/Resources/AppIcon.icns" "$SNAPSTACK_STAGING/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$SNAPSTACK_STAGING/Contents/PkgInfo"
 /usr/bin/plutil -lint "$SNAPSTACK_STAGING/Contents/Info.plist"
-/usr/bin/codesign --force --sign - \
+/usr/bin/codesign --force --sign "$SNAPSTACK_SIGNING_IDENTITY" \
     --identifier com.yangyaoming.snapstack "$SNAPSTACK_STAGING"
 /usr/bin/codesign --verify --strict --verbose=2 "$SNAPSTACK_STAGING"
 if [ -d "$SNAPSTACK_APP" ]; then
     rm -rf "$SNAPSTACK_BUILD/previous-app"
-    mkdir -p "$SNAPSTACK_BUILD/previous-app"
-    mv "$SNAPSTACK_APP" "$SNAPSTACK_BUILD/previous-app/SnapStack.app"
+    # Staging was validated above; do not leave launchable obsolete app bundles.
+    rm -rf "$SNAPSTACK_APP"
 fi
 mv "$SNAPSTACK_STAGING" "$SNAPSTACK_APP"
 echo "Built: $SNAPSTACK_APP"
+if [ "$SNAPSTACK_SIGNING_IDENTITY" = "-" ]; then
+    echo "注意：当前为临时签名。代码更新后旧权限记录可能失效；使用固定代码签名证书可通过 SNAPSTACK_SIGNING_IDENTITY 指定。"
+fi

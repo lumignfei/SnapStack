@@ -1,90 +1,114 @@
+<p align="center"><img src="Resources/AppIcon-source.png" width="120" alt="SnapStack 连截图标"></p>
+
 # SnapStack / 连截
 
-连续截图，先收集，最后一键按顺序粘贴。
+**macOS 连续截图工具：先收集、调整顺序，再一键粘贴。每张图片可选填文字备注。**
 
-SnapStack 是一个原生 macOS 小工具，用 SwiftUI + AppKit 实现。截图暂存在悬浮栏里，整理好后点击一次“全部粘贴”，逐张送到你正在使用的应用。
+A native macOS screenshot queue built with SwiftUI and AppKit. Capture multiple regions, reorder screenshots, add optional per-image notes, and paste them into another app in sequence. No account or cloud service required.
 
-## 下载与安装
+## 版本与下载
 
-**[下载 v0.1.2 预览版](https://github.com/lumignfei/SnapStack/releases/tag/v0.1.2)** · [全部版本](https://github.com/lumignfei/SnapStack/releases)
+当前源码版本：**0.2.0**。此轮更新源码，**尚未发布 0.2.0 安装包**。
 
-1. 在 Release 的 **Assets** 中下载 `SnapStack-0.1.2-macOS-universal.zip`。`Source code` 是源码压缩包，不是安装包。
-2. 解压，将 `SnapStack.app` 放进“应用程序”文件夹，然后双击打开。
-3. 首次截图时，在“系统设置 → 隐私与安全性 → 屏幕录制”（部分系统显示为“录屏与系统录音”）允许 SnapStack。
-4. 首次粘贴时，允许“辅助功能”权限（部分系统显示为“设备控制和数据访问”）。按系统提示退出并重新打开应用。
+[已有安装包与历史版本](https://github.com/lumignfei/SnapStack/releases) · [0.2.0 更新说明](docs/releases/v0.2.0.md) · [问题反馈](https://github.com/lumignfei/SnapStack/issues)
 
-要求 **macOS 13.5 或更新版本**。下载包包含 Apple Silicon（M 系列）和 Intel 两种架构；实际运行验证使用 Apple Silicon Mac，Intel 与 macOS 13.5 尚未实机验证。
+已发布的 v0.1.2 是旧版，不包含本页介绍的新界面与备注功能，快捷键也不同。体验当前版本请从源码构建。
 
-当前版本采用 ad-hoc 签名，**尚未进行 Apple Developer ID 签名和公证**。首次打开可能被 Gatekeeper 阻止；仅当你信任本项目时，在“系统设置 → 隐私与安全性”查看此次拦截并选择“仍要打开”，详见 [Apple 官方说明](https://support.apple.com/en-us/102445)。不需要关闭系统安全保护。
+## 能做什么
+
+- 连续截取多个屏幕区域，暂存在悬浮栏中。
+- 打开图片面板，拖动排序、删除图片；无需备注的图片保持原样。
+- 给指定图片添加备注；备注跟随图片排序，作为独立文字粘贴，不写进原图。
+- 通过按钮或快捷键逐张粘贴图片和备注；不自动按 Enter 发送消息。
+- 紧凑长条可收起为悬浮按钮；提供权限引导和悬停反馈。
+
+适合收集多个页面中的问题截图、给界面反馈配说明，以及向支持图片粘贴的应用整理材料。它不是录屏、OCR、图片标注或长期剪贴板历史工具。
 
 ## 使用
 
-1. **先打开 SnapStack**，屏幕右下角会出现一个可拖动的小悬浮按钮。按 **⌃⇧S**（Control + Shift + S），拖选截图区域；截图成功后自动展开截图栏，重复操作可连续收集多张。
-2. 悬浮栏横向显示缩略图。点击右上角叉号删除单张；从图片中部拖到另一张图的位置调整顺序。
-3. 点击目标应用中需要粘贴的位置，确认悬浮栏底部“目标”显示正确应用。
-4. 点击一次 **全部粘贴**。每张图片依次写入系统剪贴板、激活固定目标并发送 Command-V；每张发送后等待 **400ms**。
-5. 粘贴后队列保留，可再次粘贴；点击 **清空** 删除当前队列，并自动收起为小悬浮按钮。删除最后一张也会自动收起。
+| 操作 | 方式 |
+| --- | --- |
+| 区域截图 | **Control + Shift + A**，或点击“截图” |
+| 粘贴全部 | **Control + Shift + S**，或点击“粘贴” |
+| 调整顺序 | 点击图片区打开面板，拖动缩略图 |
+| 添加备注 | 点击指定图片的“添加备注”，输入后按 Return 收起 |
+| 备注换行 | Shift + Return；中文输入法选字时 Return 不会误收起 |
+| 清空或收起 | 长条右侧“更多操作” |
 
-点击小悬浮按钮展开截图栏；截图栏右上角的向下箭头可手动收起，截图、排序和粘贴目标都会保留。收起时角标显示当前截图张数。小按钮可以直接拖动，展开的截图栏可以拖动左侧“连截”标题；位置只保留在本次运行中。
+1. 启动连截，连续拖选需要的截图区域。
+2. 按需排序和添加备注。备注自动保留在当前会话，空备注不会输出文字。
+3. 点击目标应用的输入位置；悬停“粘贴”按钮可确认目标。
+4. 粘贴后检查接收内容。队列会保留，便于再次使用或手动清空。
 
-菜单栏文字“连截”提供截图、展开／收起截图栏和退出；截图栏右上角也有“退出”。截图选区期间悬浮窗口会暂时隐藏，取消后恢复原来的收起或展开状态；权限或截图错误会展开并显示提示。
+每张图之后，仅在有备注时粘贴“图片 N：备注”；编号按当前排序生成。目标应用可能把图片显示为附件，并将文字另行排列，不能保证所有应用都显示为图片旁边的文字。
 
-快捷键只在应用运行时有效，**不能用它启动已退出的应用**。可将应用固定到 Dock 方便启动；目前不包含开机自启。
+快捷键仅在应用运行时生效；目前没有开机自启。长条和悬浮按钮支持拖动，位置只保留在本次运行中。
 
-## 权限与数据
+## 安装与权限
 
-- 屏幕录制：读取你拖选的屏幕区域。
-- 辅助功能：仅在点击“全部粘贴”后，向目标应用发送 Command-V。
-- 原图 PNG 保存于系统临时目录，缩略图留在内存中。队列只用于当前运行会话；删除、清空和正常退出会移除对应临时原图。强制终止或崩溃可能留下临时文件。
-- 应用没有联网、上传、登录、云同步和历史记录功能。正常退出后的队列不会恢复。
-- 粘贴会覆盖系统剪贴板，完成后保留最后一张图片。
-
-## 当前版本与限制
-
-首个预览版本已实际验证：区域截图、连续收集、悬浮缩略图、单张删除、拖动排序、一次点击逐张粘贴，以及清空队列。接收应用使用本地“文本编辑”RTFD 文档，实测确认了排序后的图片接收顺序。
-
-飞书等其他应用尚未专项验证。固定 400ms 等待不能确认接收应用已经处理完毕；网络上传、应用弹窗和焦点变化可能影响结果。请等待粘贴完成后再操作目标应用，留意实际收到的图片数量。本工具不会自动按 Enter 发送聊天消息。
-
-文本编辑首次接收图片时，可能要求将 RTF 文档转换成 RTFD。快捷键冲突时可使用悬浮栏“截图”按钮。多屏、Space、全屏专项适配不在本版范围内。
-
-升级或重新构建后，ad-hoc 签名可能改变，旧授权记录可能失效。若权限开关已开但功能仍不可用，请退出应用，在对应权限列表移除 SnapStack，再添加当前安装的版本，并按系统提示重新打开。
-
-## 从源码构建
-
-需要 macOS 和 Swift 6.0 或更新版本（Xcode 或 Command Line Tools）。本机已使用 Swift 6.4 构建，无第三方包依赖。
+要求 **macOS 13.5+**。源码构建需要 **Swift 6 / Xcode 或 Command Line Tools**，无第三方 Swift 包依赖。
 
 ```sh
 git clone https://github.com/lumignfei/SnapStack.git
 cd SnapStack
-bash scripts/build-app.sh
+bash scripts/build-app.sh release
 open dist/SnapStack.app
 ```
 
-`build-app.sh [debug|release]` 编译本机架构，生成标准 `.app` Bundle、检查 Info.plist 并进行 ad-hoc 签名。固定 Bundle Identifier 为 `com.yangyaoming.snapstack`。
+- **屏幕录制**：截取你选中的屏幕区域。授权后可先开始截图。
+- **辅助功能**：向你选择的目标应用模拟 Command-V，用于自动粘贴。
 
-生成用于分发的 Universal 下载包和 SHA-256 校验文件：
+首次使用按权限引导打开对应系统设置，授权后返回应用；部分系统要求退出并重开。可通过“更多操作 → 权限与使用引导”再次查看。
+
+默认采用 **ad-hoc 临时签名，尚未进行 Developer ID 签名和公证**。下载版本可能触发 Gatekeeper；只在信任来源时按系统提示允许打开，不需要关闭系统安全保护。参见 [Apple 说明](https://support.apple.com/en-us/102445)。
+
+### 已开启权限，为什么仍提示授权？
+
+升级或重新构建可能改变签名，使旧授权记录失效。退出连截，在对应权限列表移除旧记录，再添加当前安装的 `SnapStack.app`，并按系统提示重新打开。避免同时运行不同位置的旧版本。
+
+构建脚本支持通过 `SNAPSTACK_SIGNING_IDENTITY` 指定已有代码签名证书；默认临时签名不能保证更新后沿用授权。
+
+## 隐私与数据
+
+- 无联网、上传、账号、云同步或历史记录功能。
+- 原图 PNG 存在系统临时目录，缩略图和备注用于当前运行会话。
+- 删除、清空和正常退出会删除对应临时原图；退出后队列及备注不会恢复。崩溃或强制退出可能留下临时文件。
+- 粘贴会覆盖系统剪贴板，最后保留本次最后写入的图片或备注文字。
+- 内容只通过粘贴交给选定应用；之后的数据处理取决于该接收应用。
+
+## 验证范围与限制
+
+当前版本已通过 release 构建、备注绑定与重排测试、原生独立剪贴板图文接收测试、快捷键注册测试和 7 项权限启动策略检查。已检查正式应用权限引导、收起展开及退出重开。详见 [检查记录](docs/icon-release-checks.md)。
+
+**尚未完成当前版本在 ChatGPT、微信等应用中的完整“真实截图 → 入队 → 图文批量粘贴”专项验收。** 原生剪贴板测试不代表这些应用的兼容性已验证。
+
+粘贴使用固定等待，无法确认接收应用已完成上传或处理；弹窗、焦点变化或处理缓慢可能影响结果。请等待粘贴结束再操作，并核对实际图片数量。Intel、macOS 13.5、多屏、Space 和全屏场景尚未专项实机验证；动画未进行帧率测量。
+
+## 开发与打包
 
 ```sh
+bash scripts/test-permission-launch.sh
+bash scripts/test-notes.sh
+# 需在桌面会话中退出连截后运行，避免占用同一组快捷键：
+bash scripts/test-hotkeys.sh
+# 构建 Apple Silicon + Intel 通用安装包，不替换本机 dist/SnapStack.app：
 bash scripts/package-release.sh
 ```
 
-输出到 `dist/release/`，不替换本机开发用的 `dist/SnapStack.app`。构建产物、临时验证材料均不提交到源码仓库。
+构建产物位于 `.build/` 和 `dist/`，不提交到源码仓库。`Resources/AppIcon-source.png` 是图标源图，`AppIcon.icns` 是正式图标资源。`docs/` 中早期设计与检查文档属于历史记录，以本页和当前版本说明为准。
 
-## 源码结构
+## FAQ
 
-| 文件 | 职责 |
-| --- | --- |
-| `App.swift` | 应用生命周期、菜单栏和模块连接 |
-| `CaptureHotKey.swift` | Carbon 全局快捷键 |
-| `CaptureState.swift` | 系统区域截图、临时 PNG、缩略图、队列和粘贴流程 |
-| `PasteManager.swift` | 目标应用、辅助功能权限、剪贴板和 Command-V |
-| `FloatingBar.swift` | NSPanel、SwiftUI 悬浮栏、删除与 AppKit 拖动排序 |
-| `Resources/Info.plist` | 应用元数据与权限用途说明 |
-| `scripts/build-app.sh` | 本机编译与 Bundle 打包 |
-| `scripts/package-release.sh` | 双架构构建、Universal 合并、签名和 ZIP 打包 |
+**可以只给一张图写备注吗？** 可以，备注是可选的；重排后仍属于原图。
+
+**会把备注画进图片吗？** 不会，原图和文字分别粘贴。
+
+**会自动发送聊天消息吗？** 不会，只模拟粘贴，不模拟 Enter。
+
+**退出后还能恢复截图吗？** 不能，目前仅保留当前会话。
 
 ## 反馈与许可
 
-遇到问题可在 [Issues](https://github.com/lumignfei/SnapStack/issues) 提供 macOS 版本、Mac 芯片类型、目标应用和复现步骤。请不要上传包含隐私信息的截图。
+在 [Issues](https://github.com/lumignfei/SnapStack/issues) 提供系统版本、芯片类型、目标应用和复现步骤；请勿上传私人截图。
 
-MIT License，见 [LICENSE](LICENSE)。系统调用思路参考 [yarasaa/Clippy](https://github.com/yarasaa/Clippy)，本项目独立实现，未复制其源码。
+[MIT License](LICENSE)。系统调用思路参考 [Clippy](https://github.com/yarasaa/Clippy)，界面交互参考 [DogSC](https://github.com/laogou717/dogsc)；本项目独立实现。图标由 AI 辅助生成，采用蓝灰叠片与截图取景角标。

@@ -17,25 +17,51 @@ enum SnapStackApp {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let state = CaptureState()
     private var floatingBar: FloatingBarController?
-    private var hotKey: CaptureHotKey?
+    private var hotKeys: [CaptureHotKey] = []
     private var statusItem: NSStatusItem?
+    private var permissionGuide: PermissionGuideController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
         let bar = FloatingBarController(state: state)
         floatingBar = bar
-        state.onCaptureWillStart = { [weak bar] in bar?.beginCapture() }
+        let guide = PermissionGuideController { [weak bar] in bar?.present() }
+        permissionGuide = guide
+        state.onPermissionRequired = { [weak guide] permission in guide?.show(for: permission) }
+        state.onShowPermissions = { [weak guide] in guide?.show() }
+        state.onCaptureWillStart = { [weak bar, weak guide] in
+            guide?.hide()
+            bar?.beginCapture()
+        }
         state.onCaptureFinished = { [weak bar] result in bar?.finishCapture(result) }
-        state.onQueueBecameEmpty = { [weak bar] in bar?.collapse() }
+        // Keep the compact toolbar stable when the queue becomes empty.
         installMenuBar()
-        let hotKey = CaptureHotKey { [weak self] in self?.state.capture() }
-        self.hotKey = hotKey
-        do { try hotKey.register() }
-        catch {
-            state.message = "快捷键注册失败，请使用截图按钮。"
+        var failedShortcuts: [String] = []
+        for action in CaptureHotKey.Action.allCases {
+            let hotKey = CaptureHotKey(action: action) { [weak self] in
+                switch action {
+                case .capture: self?.state.capture()
+                case .pasteAll: self?.state.pasteAll()
+                }
+            }
+            do {
+                try hotKey.register()
+                hotKeys.append(hotKey)
+            } catch {
+                failedShortcuts.append(action.label)
+            }
+        }
+        if !failedShortcuts.isEmpty {
+            state.message = "\(failedShortcuts.joined(separator: "、")) 未能注册，可能已被占用，请使用对应按钮。"
             bar.show()
         }
         bar.present()
+        if PermissionLaunchPolicy.shouldPresent(
+            screenGranted: CGPreflightScreenCaptureAccess(),
+            hasPresented: UserDefaults.standard.bool(forKey: "permissionGuidePresented"),
+            hasCompleted: UserDefaults.standard.bool(forKey: "permissionGuideCompleted")) {
+            guide.show()
+        }
         FileHandle.standardOutput.write(Data("SnapStack: floating bar ready.\n".utf8))
     }
 
@@ -44,7 +70,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        hotKey?.unregister()
+        hotKeys.forEach { $0.unregister() }
+        permissionGuide?.hide()
         state.cleanup()
     }
 
@@ -55,12 +82,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         item.button?.setAccessibilityLabel("SnapStack 连截")
         item.isVisible = true
         let menu = NSMenu()
-        let capture = NSMenuItem(title: "区域截图（⌃⇧S）", action: #selector(captureArea), keyEquivalent: "")
+        let capture = NSMenuItem(title: "区域截图（⌃⇧A）", action: #selector(captureArea), keyEquivalent: "")
         capture.target = self
         menu.addItem(capture)
+        let paste = NSMenuItem(title: "粘贴全部截图（⌃⇧S）", action: #selector(pasteAll), keyEquivalent: "")
+        paste.target = self
+        menu.addItem(paste)
         let show = NSMenuItem(title: "展开截图栏", action: #selector(toggleBar), keyEquivalent: "")
         show.target = self
         menu.addItem(show)
+        let permissions = NSMenuItem(title: "权限与使用引导", action: #selector(showPermissions), keyEquivalent: "")
+        permissions.target = self
+        menu.addItem(permissions)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "退出 SnapStack", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApplication.shared
@@ -70,7 +103,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     @objc private func captureArea() { state.capture() }
+    @objc private func pasteAll() { state.pasteAll() }
     @objc private func toggleBar() { floatingBar?.toggle() }
+    @objc private func showPermissions() { permissionGuide?.show() }
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(toggleBar) {
@@ -78,6 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             return !state.isCapturing
         }
         if menuItem.action == #selector(captureArea) { return !state.isBusy }
+        if menuItem.action == #selector(pasteAll) { return !state.isBusy && !state.items.isEmpty }
         return true
     }
 }

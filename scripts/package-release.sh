@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SNAPSTACK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SNAPSTACK_SIGNING_IDENTITY="${SNAPSTACK_SIGNING_IDENTITY:--}"
 SNAPSTACK_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$SNAPSTACK_ROOT/Resources/Info.plist")"
 SNAPSTACK_PACKAGE="$SNAPSTACK_ROOT/.build/distribution"
 SNAPSTACK_APP="$SNAPSTACK_PACKAGE/SnapStack.app"
@@ -27,10 +28,11 @@ rm -rf "$SNAPSTACK_APP"
 mkdir -p "$SNAPSTACK_APP/Contents/MacOS" "$SNAPSTACK_APP/Contents/Resources"
 /usr/bin/lipo -create "$SNAPSTACK_PACKAGE/SnapStack-arm64" "$SNAPSTACK_PACKAGE/SnapStack-x86_64" -output "$SNAPSTACK_APP/Contents/MacOS/SnapStack"
 cp "$SNAPSTACK_ROOT/Resources/Info.plist" "$SNAPSTACK_APP/Contents/Info.plist"
+cp "$SNAPSTACK_ROOT/Resources/AppIcon.icns" "$SNAPSTACK_APP/Contents/Resources/AppIcon.icns"
 cp "$SNAPSTACK_ROOT/LICENSE" "$SNAPSTACK_APP/Contents/Resources/LICENSE"
 printf 'APPL????' > "$SNAPSTACK_APP/Contents/PkgInfo"
 /usr/bin/plutil -lint "$SNAPSTACK_APP/Contents/Info.plist"
-/usr/bin/codesign --force --sign - --identifier com.yangyaoming.snapstack "$SNAPSTACK_APP"
+/usr/bin/codesign --force --sign "$SNAPSTACK_SIGNING_IDENTITY" --identifier com.yangyaoming.snapstack "$SNAPSTACK_APP"
 /usr/bin/codesign --verify --strict --all-architectures --verbose=2 "$SNAPSTACK_APP"
 /usr/bin/lipo -info "$SNAPSTACK_APP/Contents/MacOS/SnapStack"
 
