@@ -8,21 +8,22 @@ struct NoteEditor: NSViewRepresentable {
     var onSubmit: () -> Void = {}
 
     // Match the editor's native glyph layout, including soft wrapping.
-    @MainActor static func height(for text: String) -> CGFloat {
+    @MainActor static func height(for text: String, width: CGFloat = 474, maximum: CGFloat = 76) -> CGFloat {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = 4
         let storage = NSTextStorage(string: text.isEmpty ? " " : text + (text.hasSuffix("\n") ? " " : ""),
                                     attributes: [.font: NSFont.systemFont(ofSize: 13), .paragraphStyle: paragraph])
         let layout = NSLayoutManager()
-        let container = NSTextContainer(size: NSSize(width: 474, height: CGFloat.greatestFiniteMagnitude))
+        let container = NSTextContainer(size: NSSize(width: max(20, width - 10), height: CGFloat.greatestFiniteMagnitude))
         container.lineFragmentPadding = 0
         storage.addLayoutManager(layout)
         layout.addTextContainer(container)
         layout.ensureLayout(for: container)
-        return min(76, max(36, ceil(layout.usedRect(for: container).height) + 16))
+        return min(maximum, max(36, ceil(layout.usedRect(for: container).height) + 16))
     }
 
     @MainActor static func commitCurrentInput() {
+        MarkCanvasView.commitActiveText()
         guard let editor = NSApp.keyWindow?.firstResponder as? PlaceholderTextView else { return }
         if editor.hasMarkedText() { editor.unmarkText() }
         editor.delegate?.textDidChange?(Notification(name: NSText.didChangeNotification, object: editor))

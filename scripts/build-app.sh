@@ -3,7 +3,15 @@ set -euo pipefail
 
 SNAPSTACK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SNAPSTACK_CONFIGURATION="${1:-debug}"
-SNAPSTACK_SIGNING_IDENTITY="${SNAPSTACK_SIGNING_IDENTITY:--}"
+SNAPSTACK_IDENTITY_FILE="$HOME/Library/Application Support/SnapStack/Signing/identity"
+if [ -z "${SNAPSTACK_SIGNING_IDENTITY:-}" ]; then
+    if [ -f "$SNAPSTACK_IDENTITY_FILE" ]; then
+        SNAPSTACK_SIGNING_IDENTITY="$(cat "$SNAPSTACK_IDENTITY_FILE")"
+    else
+        echo "未配置固定签名。先运行 bash scripts/setup-local-signing.sh；仅临时测试可显式设置 SNAPSTACK_SIGNING_IDENTITY=-。" >&2
+        exit 1
+    fi
+fi
 SNAPSTACK_BUILD="$SNAPSTACK_ROOT/.build"
 SNAPSTACK_APP="$SNAPSTACK_ROOT/dist/SnapStack.app"
 SNAPSTACK_STAGING="$SNAPSTACK_BUILD/package/SnapStack.app"

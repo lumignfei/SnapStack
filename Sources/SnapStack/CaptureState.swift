@@ -6,8 +6,10 @@ import SwiftUI
 struct ScreenshotItem: Identifiable {
     let id: UUID
     let fileURL: URL
-    let thumbnail: NSImage
+    var thumbnail: NSImage
     var note = ""
+    var marks: [ImageMark] = []
+    var redoMarks: [ImageMark] = []
 }
 
 enum CaptureOutcome {
@@ -146,6 +148,25 @@ final class CaptureState: ObservableObject {
         return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
     }
 
+    func addMark(_ mark: ImageMark, for id: UUID) {
+        guard !isBusy, let index = items.firstIndex(where: { $0.id == id }) else { return }
+        items[index].marks.append(mark); items[index].redoMarks.removeAll(); updateMarkedThumbnail(index)
+    }
+    func undoMark(for id: UUID) {
+        guard !isBusy, let index = items.firstIndex(where: { $0.id == id }), let mark = items[index].marks.popLast() else {return}
+        items[index].redoMarks.append(mark); updateMarkedThumbnail(index)
+    }
+    func redoMark(for id: UUID) {
+        guard !isBusy, let index = items.firstIndex(where: { $0.id == id }), let mark = items[index].redoMarks.popLast() else {return}
+        items[index].marks.append(mark); updateMarkedThumbnail(index)
+    }
+    private func updateMarkedThumbnail(_ index: Int) {
+        guard let original = makeThumbnail(items[index].fileURL) else { return }
+        let result = NSImage(size: original.size)
+        result.lockFocus(); MarkRenderer.draw(original, marks: items[index].marks, in: NSRect(origin: .zero, size: original.size)); result.unlockFocus()
+        items[index].thumbnail = result
+    }
+
     func setNote(_ note: String, for id: UUID) {
         guard !isBusy, let index = items.firstIndex(where: { $0.id == id }), items[index].note != note else { return }
         items[index].note = note
@@ -208,7 +229,7 @@ final class CaptureState: ObservableObject {
             var hasPastedNote = false
             do {
                 for (index, item) in queue.enumerated() {
-                    guard let image = NSImage(contentsOf: item.fileURL) else {
+                    guard let image = MarkRenderer.export(url: item.fileURL, marks: item.marks) else {
                         reportError("第 \(index + 1) 张无法读取；已发送 \(completed) 张，队列保留。")
                         return
                     }

@@ -5,6 +5,9 @@ import SwiftUI
 struct NotesChecks {
     @MainActor static func main() throws {
         _ = NSApplication.shared
+        let wrapped = String(repeating: "自动换行备注", count: 5)
+        precondition(NoteEditor.height(for: wrapped, width: 210, maximum: 126) > NoteEditor.height(for: wrapped))
+        precondition(NoteEditor.height(for: String(repeating: "很长的备注", count: 100), width: 210, maximum: 126) == 126)
         precondition(NoteEditor.height(for: "") == 36)
         precondition(NoteEditor.height(for: "一行备注") == 36)
         precondition(NoteEditor.height(for: "第一行\n第二行") > 36)
@@ -47,9 +50,25 @@ struct NotesChecks {
         let first = ScreenshotItem(id: UUID(), fileURL: firstURL, thumbnail: image)
         let second = ScreenshotItem(id: UUID(), fileURL: secondURL, thumbnail: image)
         let state = CaptureState(items: [first, second])
+        let mark = ImageMark(tool: .arrow, points: [CGPoint(x: 0.1, y: 0.2), CGPoint(x: 0.8, y: 0.7)], color: 0, width: 0.01)
+        let sourceBytes = try Data(contentsOf: firstURL)
+        state.addMark(mark, for: first.id)
+        state.undoMark(for: first.id)
+        precondition(state.items[0].marks.isEmpty && state.items[0].redoMarks.count == 1)
+        state.redoMark(for: first.id)
+        precondition(state.items[0].marks.count == 1)
+        let rendered = MarkRenderer.export(url: firstURL, marks: state.items[0].marks)!
+        precondition(rendered.representations[0].pixelsWide == 16)
+        let unchangedBytes = try Data(contentsOf: firstURL)
+        precondition(unchangedBytes == sourceBytes)
+        for tool in MarkTool.allCases {
+            var sample = mark; sample.tool = tool; sample.text = "Test"
+            precondition(MarkRenderer.export(url: firstURL, marks: [sample]) != nil)
+        }
         state.setNote("只备注第一张\n第二行🙂", for: first.id)
         state.editingNoteID = first.id
         state.move(first.id, beforeOrAfter: second.id)
+        precondition(state.items[1].marks.count == 1 && state.items[0].marks.isEmpty)
         precondition(state.items[1].id == first.id && state.items[1].note == "只备注第一张\n第二行🙂")
         precondition(state.items[0].note.isEmpty && state.editingNoteID == first.id)
         precondition(ScreenshotNote.pasteText(state.items[1].note, imageNumber: 2)!.hasPrefix("图片 2："))

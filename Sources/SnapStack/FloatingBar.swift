@@ -16,7 +16,7 @@ final class FloatingBarController {
     private var observations = Set<AnyCancellable>()
     private var expandedBeforeCapture: Bool?
     private let surfaceTransition = BarSurfaceTransition()
-    private static let expandedSize = NSSize(width: 520, height: 72)
+    private static let expandedSize = NSSize(width: 320, height: 56)
     private static let collapsedSize = NSSize(width: 56, height: 48)
 
     var isExpanded: Bool { expanded }
@@ -153,7 +153,7 @@ private struct FloatingBarRootView: View {
         ZStack(alignment: .bottomTrailing) {
             if presentation.isExpanded {
                 ScreenshotBarView(state: state, showsQueue: $presentation.showsQueue, onCollapse: onCollapse)
-                    .frame(width: 520, height: 72)
+                    .frame(width: 320, height: 56)
                     .transition(.identity)
             } else {
                 ZStack(alignment: .topTrailing) {
@@ -178,8 +178,8 @@ private struct FloatingBarRootView: View {
         .opacity(presentation.contentOpacity)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(InterfaceStyle.line))
+        .clipShape(RoundedRectangle(cornerRadius: presentation.isExpanded ? 28 : 18))
+        .overlay(RoundedRectangle(cornerRadius: presentation.isExpanded ? 28 : 18).stroke(InterfaceStyle.line))
     }
 }
 
@@ -200,27 +200,14 @@ struct ScreenshotBarView: View {
     let onCollapse: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(spacing: 4) {
-                ForEach(0..<3) { _ in
-                    HStack(spacing: 4) {
-                        Circle().frame(width: 2.5, height: 2.5)
-                        Circle().frame(width: 2.5, height: 2.5)
-                    }
-                }
-            }
-                .foregroundStyle(InterfaceStyle.muted.opacity(0.55))
-                .frame(width: 18, height: 44)
-                .overlay(PanelDragHandle().accessibilityHidden(true))
-                .offset(x: -4)
-                .help("拖动移动截图栏")
+        HStack(spacing: 6) {
             Button { state.capture() } label: {
                 HStack(spacing: 8) {
                     CaptureOutline()
                         .stroke(style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
                         .frame(width: 22, height: 18)
                     Text("截图").font(.system(size: 13, weight: .medium))
-                }.frame(width: 80, height: 44)
+                }.frame(width: 76, height: 40)
                     .contentShape(Rectangle())
                     .foregroundStyle(InterfaceStyle.ink.opacity(0.85))
             }
@@ -228,27 +215,13 @@ struct ScreenshotBarView: View {
             divider
             Button { more.value = false; showsQueue.toggle() } label: {
                 HStack(spacing: 6) {
-                    if state.items.isEmpty {
-                        Image(systemName: "rectangle.stack").font(.system(size: 17, weight: .regular))
-                        Text("暂无截图").font(.system(size: 12))
-                    } else {
-                        ForEach(Array(state.items.prefix(3).enumerated()), id: \.element.id) { index, item in
-                            Image(nsImage: item.thumbnail).resizable().scaledToFit()
-                                .frame(maxWidth: 46).frame(height: 36)
-                                .background(InterfaceStyle.background, in: RoundedRectangle(cornerRadius: 5))
-                                .clipShape(RoundedRectangle(cornerRadius: 5))
-                                .overlay(RoundedRectangle(cornerRadius: 5).stroke(InterfaceStyle.line))
-                                .accessibilityLabel("截图 \(index + 1)")
-                        }
-                        if state.items.count > 3 {
-                            Text("+\(state.items.count - 3)").font(.system(size: 11, weight: .medium))
-                        }
-                    }
-                    Spacer(minLength: 0)
+                    Image(systemName: "rectangle.stack").font(.system(size: 17, weight: .regular))
+                    Text(state.items.count > 99 ? "99+" : "\(state.items.count)")
+                        .font(.system(size: 12, weight: .medium)).monospacedDigit()
+                        .frame(minWidth: 16)
                     Image(systemName: "chevron.up").font(.system(size: 9, weight: .medium))
                 }.animation(.easeInOut(duration: 0.24), value: state.items.map(\.id))
-                .padding(.horizontal, 10)
-                .frame(width: 172, height: 48)
+                .frame(width: 82, height: 40)
                 .contentShape(Rectangle())
             }
             .buttonStyle(ToolbarHoverStyle()).foregroundStyle(InterfaceStyle.muted)
@@ -261,7 +234,7 @@ struct ScreenshotBarView: View {
             Button { state.pasteAll() } label: {
                 Text(state.isPasting ? "粘贴中…" : "粘贴")
                     .font(.system(size: 13, weight: .medium))
-                    .frame(width: 84, height: 44)
+                    .frame(width: 64, height: 40)
                     .foregroundStyle(state.items.isEmpty ? InterfaceStyle.muted : InterfaceStyle.primaryButton)
                     .background(state.items.isEmpty ? InterfaceStyle.background : InterfaceStyle.accentBackground,
                                 in: RoundedRectangle(cornerRadius: 12))
@@ -272,10 +245,10 @@ struct ScreenshotBarView: View {
             Button { showsQueue = false; more.value.toggle() } label: {
                 Image(systemName: "ellipsis").font(.system(size: 15, weight: .regular))
                     .foregroundStyle(InterfaceStyle.accent)
-                    .frame(width: 40, height: 40)
-                    .background(more.value ? InterfaceStyle.accentBackground : InterfaceStyle.background.opacity(0.6),
+                    .frame(width: 34, height: 40)
+                    .background(more.value ? InterfaceStyle.accentBackground : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 11))
-                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(InterfaceStyle.line.opacity(0.7)))
+
             }
             .buttonStyle(ToolbarHoverStyle()).accessibilityLabel("更多操作").disabled(state.isBusy)
             .stablePopover(isPresented: $more.value, size: CGSize(width: 220, height: 199)) {
@@ -300,6 +273,8 @@ struct ScreenshotBarView: View {
             }
         }
         .padding(.horizontal, 16)
+        .frame(width: 320, height: 56)
+        .overlay(PanelDragHandle().accessibilityHidden(true))
         .foregroundStyle(InterfaceStyle.ink)
         .onReceive(state.$isCapturing) { capturing in
             if capturing { showsQueue = false; more.value = false }
@@ -312,7 +287,7 @@ struct ScreenshotBarView: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(InterfaceStyle.line).frame(width: 1, height: 32)
+        Rectangle().fill(InterfaceStyle.line).frame(width: 1, height: 24)
     }
 }
 
@@ -368,89 +343,99 @@ private struct MoreActionRow: View {
 
 private struct ScreenshotQueueView: View {
     @ObservedObject var state: CaptureState
+    @StateObject private var markSettings = MarkSettings()
     static func size(for state: CaptureState) -> CGSize {
-        let hasNote = state.editingNoteID.map { id in state.items.contains { $0.id == id } } ?? false
-        let note = state.items.first { $0.id == state.editingNoteID }?.note ?? ""
-        return ScreenshotQueueLayout.size(isEmpty: state.items.isEmpty, showsNote: hasNote,
-                                          noteHeight: NoteEditor.height(for: note), showsError: state.transientError != nil)
+        let selected = state.items.first { $0.id == state.editingNoteID }
+        return CGSize(width: selected == nil ? 320 : 680,
+                      height: (selected == nil ? 126 : 444) + (state.transientError == nil ? 0 : 34))
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text("截图 \(state.items.count) 张").font(.system(size: 14, weight: .medium))
-                Spacer()
-                Text("拖动图片调整顺序").font(.system(size: 11)).foregroundStyle(InterfaceStyle.muted)
-            }
-            .frame(height: 18)
-            if state.items.isEmpty {
-                Text("按 ⌃⇧A 截图，图片会收集在这里。")
-                    .font(.system(size: 13)).foregroundStyle(InterfaceStyle.muted)
-                    .frame(maxWidth: .infinity, minHeight: 100, maxHeight: 100)
-            } else {
-            ScrollView(.horizontal) {
-                HStack(spacing: 14) {
-                    ForEach(Array(state.items.enumerated()), id: \.element.id) { index, item in
-                        VStack(alignment: .leading, spacing: 8) {
-                            ZStack(alignment: .topTrailing) {
-                            Image(nsImage: item.thumbnail).resizable().scaledToFit()
-                                .frame(width: 150, height: 88)
-                                .background(InterfaceStyle.background, in: RoundedRectangle(cornerRadius: 8))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(state.editingNoteID == item.id ? InterfaceStyle.accent : InterfaceStyle.line, lineWidth: state.editingNoteID == item.id ? 1.5 : 1))
-                                .overlay(ThumbnailDragHandle(itemID: item.id, state: state).accessibilityHidden(true))
-                                Button { state.remove(item.id) } label: {
-                                    Image(systemName: "xmark").font(.system(size: 8, weight: .semibold))
-                                        .foregroundStyle(InterfaceStyle.ink).frame(width: 19, height: 19)
-                                        .background(.white.opacity(0.95), in: Circle())
-                                }.buttonStyle(.plain).padding(4).disabled(state.isBusy)
-                                    .accessibilityLabel("删除截图 \(index + 1)")
-                            }
-                            HStack(spacing: 0) {
-                                Text("\(index + 1)").foregroundStyle(InterfaceStyle.muted)
-                                Spacer()
-                                Button {
-                                    NoteEditor.commitCurrentInput()
-                                    state.editingNoteID = state.editingNoteID == item.id ? nil : item.id
-                                } label: {
-                                    Label((item.note).isEmpty ? "添加备注" : "编辑备注", systemImage: "square.and.pencil")
-                                }
-                                .buttonStyle(.plain).foregroundStyle(InterfaceStyle.primaryButton).disabled(state.isBusy)
-                            }.font(.system(size: 11))
-                        }.frame(width: 150)
-                            .overlay(RoundedRectangle(cornerRadius: 9)
-                                .stroke(InterfaceStyle.accent.opacity(state.reorderedID == item.id ? 0.8 : 0), lineWidth: 2)
-                                .padding(-3).allowsHitTesting(false))
-                            .animation(.easeOut(duration: 0.2), value: state.reorderedID)
-
-                    }
-                }.animation(.easeInOut(duration: 0.24), value: state.items.map(\.id)).padding(4)
-            }.scrollIndicators(.hidden).frame(height: 118)
-            }
-            if let id = state.editingNoteID, let selected = state.items.firstIndex(where: { $0.id == id }) {
-                Rectangle().fill(InterfaceStyle.line).frame(height: 1)
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("图片 \(selected + 1) 的备注").font(.system(size: 12, weight: .medium))
-                        Spacer()
-                        Button("收起") { NoteEditor.commitCurrentInput(); state.editingNoteID = nil }
-                            .buttonStyle(.plain).font(.system(size: 11))
-                            .foregroundStyle(InterfaceStyle.muted)
-                    }
-                    .frame(height: 16)
-                    NoteEditor(text: Binding(get: { state.items.first(where: { $0.id == id })?.note ?? "" }, set: { state.setNote($0, for: id) }), label: "图片 \(selected + 1) 的备注", isEditable: !state.isBusy, onSubmit: { state.editingNoteID = nil })
-                        .id(id)
-                        .frame(height: NoteEditor.height(for: state.items[selected].note)).padding(.horizontal, 6)
-                        .background(InterfaceStyle.background.opacity(0.65), in: RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(InterfaceStyle.line))
+        VStack(alignment: .leading, spacing: 8) {
+            if let item = state.items.first(where: { $0.id == state.editingNoteID }),
+               let index = state.items.firstIndex(where: { $0.id == item.id }) {
+                HStack {
+                    Button("‹ 返回图片") { closePreview() }.buttonStyle(.plain)
+                    Spacer()
+                    Text("图片 \(index + 1)").foregroundStyle(InterfaceStyle.muted)
+                }.font(.system(size: 12)).frame(height: 24)
+                HStack(alignment: .top, spacing: 14) {
+                    MarkCanvas(item: item, state: state, settings: markSettings).id(item.id)
+                        .frame(width: 420, height: 380)
+                        .clipped()
+                        .background(InterfaceStyle.background, in: RoundedRectangle(cornerRadius: 8))
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("备注（可选）").font(.system(size: 12, weight: .medium))
+                        NoteEditor(text: Binding(get: { state.items.first(where: { $0.id == item.id })?.note ?? "" },
+                                                 set: { state.setNote($0, for: item.id) }),
+                                   label: "图片 \(index + 1) 的备注", isEditable: !state.isBusy,
+                                   onSubmit: { closePreview() })
+                            .id(item.id).frame(height: NoteEditor.height(for: item.note, width: 210, maximum: 126))
+                            .padding(.horizontal, 6)
+                            .background(InterfaceStyle.background, in: RoundedRectangle(cornerRadius: 8))
+                        Text("回车完成 · Shift+回车换行").font(.system(size: 9)).foregroundStyle(InterfaceStyle.muted)
+                        MarkTools(state: state, item: item, settings: markSettings)
+                    }.frame(width: 222, alignment: .leading)
                 }
+            } else {
+                if state.items.isEmpty {
+                    Text("按 ⌃⇧A 开始截图").font(.system(size: 12))
+                        .foregroundStyle(InterfaceStyle.muted)
+                        .frame(maxWidth: .infinity).frame(height: 80)
+                } else {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 8) {
+                            ForEach(Array(state.items.enumerated()), id: \.element.id) { index, item in
+                                QueueThumbnail(state: state, item: item, index: index)
+                            }
+                        }.padding(2).animation(.easeInOut(duration: 0.24), value: state.items.map(\.id))
+                    }.scrollIndicators(.hidden).frame(height: 80)
+                }
+                Text("点击图片放大、添加备注 · 拖动排序")
+                    .font(.system(size: 10)).foregroundStyle(InterfaceStyle.muted)
+                    .frame(maxWidth: .infinity).frame(height: 14)
             }
             if let error = state.transientError {
-                Text(error).font(.system(size: 11)).foregroundStyle(InterfaceStyle.muted)
-                    .lineLimit(2).frame(maxWidth: .infinity, alignment: .leading).frame(height: 28, alignment: .topLeading)
+                Text(error).font(.system(size: 10)).foregroundStyle(InterfaceStyle.muted)
+                    .lineLimit(2).frame(height: 26)
             }
         }
-        .padding(22).frame(width: 540, height: Self.size(for: state).height, alignment: .topLeading)
+        .padding(12).frame(width: Self.size(for: state).width, height: Self.size(for: state).height, alignment: .topLeading)
         .foregroundStyle(InterfaceStyle.ink).background(Color.white)
+    }
+    private func closePreview() { NoteEditor.commitCurrentInput(); state.editingNoteID = nil }
+}
+
+private struct QueueThumbnail: View {
+    @ObservedObject var state: CaptureState
+    let item: ScreenshotItem
+    let index: Int
+    @StateObject private var hover = BooleanViewState()
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(nsImage: item.thumbnail).resizable().scaledToFit()
+                .frame(width: 90, height: 56)
+                .background(InterfaceStyle.background, in: RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(InterfaceStyle.line))
+                .overlay(ThumbnailDragHandle(itemID: item.id, state: state))
+                .overlay(alignment: .topTrailing) {
+                    if hover.value {
+                        Button { state.remove(item.id) } label: {
+                            Image(systemName: "xmark").font(.system(size: 8, weight: .semibold))
+                                .frame(width: 18, height: 18).background(.white, in: Circle())
+                        }.buttonStyle(.plain).padding(2).disabled(state.isBusy)
+                            .accessibilityLabel("删除截图 \(index + 1)")
+                    }
+                }
+            HStack(spacing: 3) {
+                Text("\(index + 1)")
+                if !item.note.isEmpty { Image(systemName: "square.and.pencil") }
+            }.font(.system(size: 10)).foregroundStyle(InterfaceStyle.muted)
+        }.frame(width: 90).onHover { hover.value = $0 }
+            .overlay(RoundedRectangle(cornerRadius: 7)
+                .stroke(InterfaceStyle.accent.opacity(state.reorderedID == item.id ? 0.8 : 0), lineWidth: 2)
+                .padding(-1).allowsHitTesting(false))
+            .animation(.easeOut(duration: 0.2), value: state.reorderedID)
     }
 }
 
@@ -538,11 +523,15 @@ private final class ThumbnailDragView: NSView {
     let state: CaptureState
     private var startPoint: NSPoint?
     private var lastReorderTime = -Double.infinity
+    private var didDrag = false
 
     init(itemID: UUID, state: CaptureState) {
         self.itemID = itemID
         self.state = state
         super.init(frame: .zero)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.button)
+        setAccessibilityLabel("放大图片并添加备注")
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
@@ -553,6 +542,7 @@ private final class ThumbnailDragView: NSView {
         guard !state.isBusy else { return }
         NoteEditor.commitCurrentInput()
         lastReorderTime = -Double.infinity
+        didDrag = false
         startPoint = event.locationInWindow
     }
 
@@ -560,6 +550,7 @@ private final class ThumbnailDragView: NSView {
         guard !state.isBusy, let startPoint, let root = window?.contentView else { return }
         let point = event.locationInWindow
         guard hypot(point.x - startPoint.x, point.y - startPoint.y) >= 4 else { return }
+        didDrag = true
         state.draggingID = itemID
         if event.timestamp - lastReorderTime >= 0.26,
            let destination = thumbnail(in: root, at: point), destination.itemID != itemID {
@@ -569,8 +560,16 @@ private final class ThumbnailDragView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        let open = startPoint != nil && !didDrag && !state.isBusy
         startPoint = nil
         state.draggingID = nil
+        if open { state.editingNoteID = itemID }
+    }
+    override func accessibilityPerformPress() -> Bool {
+        guard !state.isBusy else { return false }
+        NoteEditor.commitCurrentInput()
+        state.editingNoteID = itemID
+        return true
     }
 
     private func thumbnail(in view: NSView, at windowPoint: NSPoint) -> ThumbnailDragView? {
@@ -589,6 +588,17 @@ private struct PanelDragHandle: NSViewRepresentable {
 }
 
 private final class DragHandleView: NSView {
+    // Match the fixed toolbar layout. Reserve every button, including disabled
+    // buttons, so a click can never accidentally start a window drag.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let local = convert(point, from: superview)
+        guard bounds.contains(local) else { return nil }
+        let buttons = [(16.0, 76.0), (105.0, 82.0), (200.0, 64.0), (270.0, 34.0)]
+        if buttons.contains(where: { NSRect(x: $0.0, y: 8, width: $0.1, height: 40).contains(local) }) {
+            return nil
+        }
+        return self
+    }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override var needsPanelToBecomeKey: Bool { false }
     override func mouseDown(with event: NSEvent) { window?.performDrag(with: event) }

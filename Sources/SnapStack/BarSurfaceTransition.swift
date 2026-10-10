@@ -34,8 +34,10 @@ final class BarSurfaceTransition {
         let surface = NSView(frame: NSRect(origin: .zero, size: union.size))
         surface.wantsLayer = true
         guard let root = surface.layer else { return }
-        let oldPath = CGPath(roundedRect: oldRect, cornerWidth: 18, cornerHeight: 18, transform: nil)
-        let newPath = CGPath(roundedRect: newRect, cornerWidth: 18, cornerHeight: 18, transform: nil)
+        let oldRadius: CGFloat = from.width > 100 ? 28 : 18
+        let newRadius: CGFloat = to.width > 100 ? 28 : 18
+        let oldPath = CGPath(roundedRect: oldRect, cornerWidth: oldRadius, cornerHeight: oldRadius, transform: nil)
+        let newPath = CGPath(roundedRect: newRect, cornerWidth: newRadius, cornerHeight: newRadius, transform: nil)
         let shell = CAShapeLayer()
         shell.path = newPath
         shell.fillColor = NSColor.white.cgColor

@@ -4,7 +4,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-**Capture several screen regions, reorder them, and paste them in sequence. Add a text note only to the screenshots that need one.**
+**Capture several screen regions, reorder them, and paste them in sequence. Add optional text notes and image markup.**
 
 SnapStack (连截) is a native macOS utility built with SwiftUI and AppKit. It keeps screenshots in a floating toolbar for the current session. Notes stay attached to their image when reordered and are pasted as separate text, without changing the original image.
 
@@ -22,20 +22,21 @@ Source version: **0.2.0**. A 0.2.0 app download has **not** been published. [Exi
 - Gather interface references and explain selected buttons or layouts.
 - Prepare an ordered set of images before pasting into an app that accepts images.
 
-SnapStack focuses on a session-based screenshot queue. It does not provide screen recording, OCR, image annotation, cloud sync, or persistent clipboard history.
+SnapStack focuses on a session-based screenshot queue. It includes rectangle, ellipse, arrow, pen, text and mosaic markup, with color, stroke width, undo and redo controls. It does not provide screen recording, OCR, cloud sync, or persistent clipboard history.
 
 ## Quick start
 
 ```sh
 git clone https://github.com/lumignfei/SnapStack.git
 cd SnapStack
+bash scripts/setup-local-signing.sh
 bash scripts/build-app.sh release
 open dist/SnapStack.app
 ```
 
 1. Grant Screen Recording permission to capture selected regions. Grant Accessibility permission for automated Command-V paste events.
 2. Press **Control + Shift + A** to capture a region; repeat to collect more images.
-3. Open the image panel to reorder, delete, or add an optional note. Return closes the note editor; Shift + Return inserts a newline. Input-method composition is handled separately.
+3. Open the compact image tray to reorder or delete images. Click a thumbnail for a larger preview, optional notes and image markup. Notes grow to a capped height, then scroll. Return closes the note editor; Shift + Return inserts a newline. Input-method composition is handled separately.
 4. Click the input area in your target app, then use **Control + Shift + S** or the Paste button. Hover over Paste to check the target.
 5. Check the received images. The queue remains available until cleared or the app exits.
 
@@ -47,11 +48,11 @@ Each image is pasted first, followed by its nonempty note in the format `图片 
 
 The receiving app controls layout: it may show image attachments separately from the note text. Side-by-side image/text layout is not guaranteed. The complete current workflow has **not** been validated specifically in ChatGPT or WeChat. Fixed paste delays cannot confirm that an app finished processing or uploading an image; focus changes and dialogs can interrupt the sequence.
 
-Native clipboard image/text tests, note identity and reordering checks, hotkey registration checks, and seven permission-launch checks have passed. See the [validation record](docs/icon-release-checks.md) for scope. Intel, macOS 13.5, multiple displays, Spaces and fullscreen scenarios have not had dedicated device testing. Animation frame rates have not been measured.
+Native clipboard image/text tests, note identity and reordering checks, hotkey registration checks, and seven permission-launch checks have passed. Markup export, undo/redo, original preservation, reordered identity and long-note layout checks also passed. See the [current validation record](docs/markup-checks.md) for scope. Intel, macOS 13.5, multiple displays, Spaces and fullscreen scenarios have not had dedicated device testing. Animation frame rates have not been measured.
 
 ## Permissions and privacy
 
-The default build uses **ad-hoc signing, without Developer ID signing or notarization**. Gatekeeper may block a downloaded app; follow [Apple’s guidance](https://support.apple.com/en-us/102445) only if you trust the source. Do not disable system security protections.
+Historical downloads use **ad-hoc signing, without Developer ID signing or notarization**. Gatekeeper may block a downloaded app; follow [Apple’s guidance](https://support.apple.com/en-us/102445) only if you trust the source. Do not disable system security protections.
 
 Rebuilding can invalidate existing permission records. If permission is enabled but capture or paste fails, quit SnapStack, remove its old entry in the relevant privacy settings, add the current app, and reopen as prompted. Build scripts accept an existing signing identity through `SNAPSTACK_SIGNING_IDENTITY`.
 
@@ -61,9 +62,9 @@ Pasting overwrites the system clipboard, leaving the final image or note written
 
 ## FAQ
 
-**Can I annotate only one screenshot?** Yes. Leave the other notes empty.
+**Can I add a note or markup to only one screenshot?** Yes. Each image keeps its own notes and marks.
 
-**Are notes drawn into the image?** No. Images and text are pasted separately.
+**Are notes drawn into the image?** No. Notes are pasted as separate text. Markup is rendered into the pasted image; the source image remains intact during the session.
 
 **Does it send messages automatically?** No. It pastes without pressing Enter.
 
@@ -76,3 +77,5 @@ Pasting overwrites the system clipboard, leaving the final image or note written
 See the [Chinese README](README.md) for test and universal-package commands, and the [0.2.0 source update notes](docs/releases/v0.2.0.md).
 
 System-integration ideas were informed by [Clippy](https://github.com/yarasaa/Clippy), and UI interactions by [DogSC](https://github.com/laogou717/dogsc). SnapStack is independently implemented. The app icon was AI-assisted.
+
+Local builds require a persistent signing identity. Run `scripts/setup-local-signing.sh` once; the private key stays in the login keychain and machine configuration in `~/Library/Application Support/SnapStack/Signing/`. Keep this identity across updates. No global trust is changed. First signing may require Keychain confirmation. Switching identities requires reauthorization; Screen Recording and Accessibility permissions survived two subsequent source updates on the development Mac; other devices still need verification. Set `SNAPSTACK_SIGNING_IDENTITY` to use an existing certificate, or explicitly `-` for temporary testing only. Local self-signing is not Developer ID signing or notarization.
