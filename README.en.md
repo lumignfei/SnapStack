@@ -10,7 +10,7 @@ SnapStack (连截) is a native macOS utility built with SwiftUI and AppKit. It k
 
 ## Version and availability
 
-Source version: **0.2.0**. A 0.2.0 app download has **not** been published. [Existing releases](https://github.com/lumignfei/SnapStack/releases) include the older v0.1.2, which has different shortcuts and does not include the new interface or notes described here. Build from source to try the current version.
+Current release: **0.2.0**. [Download the universal macOS app](https://github.com/lumignfei/SnapStack/releases/download/v0.2.0/SnapStack-0.2.0-macOS-universal.zip) for Apple Silicon and Intel, or see the [release notes and checksum file](https://github.com/lumignfei/SnapStack/releases/tag/v0.2.0). Older v0.1.2 downloads have a different interface and shortcuts.
 
 - macOS 13.5 or later; no Windows or Linux version.
 - Swift 6 / Xcode or Command Line Tools for building; no third-party Swift package dependencies.
@@ -25,6 +25,10 @@ Source version: **0.2.0**. A 0.2.0 app download has **not** been published. [Exi
 SnapStack focuses on a session-based screenshot queue. It includes rectangle, ellipse, arrow, pen, text and mosaic markup, with color, stroke width, undo and redo controls. It does not provide screen recording, OCR, cloud sync, or persistent clipboard history.
 
 ## Quick start
+
+Download and unzip the app, move `SnapStack.app` to a fixed location (Applications is recommended), then open it. Use `SHA256SUMS.txt` from the release page to verify the download. Before upgrading, finish using the screenshot queue and quit the old app; the queue does not survive a restart.
+
+To build from source instead:
 
 ```sh
 git clone https://github.com/lumignfei/SnapStack.git
@@ -52,7 +56,7 @@ Native clipboard image/text tests, note identity and reordering checks, hotkey r
 
 ## Permissions and privacy
 
-Historical downloads use **ad-hoc signing, without Developer ID signing or notarization**. Gatekeeper may block a downloaded app; follow [Apple’s guidance](https://support.apple.com/en-us/102445) only if you trust the source. Do not disable system security protections.
+The current public download uses **ad-hoc signing, without Developer ID signing or notarization**. Gatekeeper may block a downloaded app; follow [Apple’s guidance](https://support.apple.com/en-us/102445) only if you trust the source. Do not disable system security protections.
 
 Rebuilding can invalidate existing permission records. If permission is enabled but capture or paste fails, quit SnapStack, remove its old entry in the relevant privacy settings, add the current app, and reopen as prompted. Build scripts accept an existing signing identity through `SNAPSTACK_SIGNING_IDENTITY`.
 
@@ -74,7 +78,7 @@ Pasting overwrites the system clipboard, leaving the final image or note written
 
 ## Development and credits
 
-See the [Chinese README](README.md) for test and universal-package commands, and the [0.2.0 source update notes](docs/releases/v0.2.0.md).
+See the [Chinese README](README.md) for test and universal-package commands, and the [0.2.0 release notes](docs/releases/v0.2.0.md).
 
 System-integration ideas were informed by [Clippy](https://github.com/yarasaa/Clippy), and UI interactions by [DogSC](https://github.com/laogou717/dogsc). SnapStack is independently implemented. The app icon was AI-assisted.
 

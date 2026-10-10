@@ -10,11 +10,11 @@ A native macOS screenshot queue built with SwiftUI and AppKit. Capture multiple 
 
 ## 版本与下载
 
-当前源码版本：**0.2.0**。此轮更新源码，**尚未发布 0.2.0 安装包**。
+当前发布版本：**0.2.0**，支持 Apple Silicon 和 Intel，要求 macOS 13.5 或更新版本。
 
-[已有安装包与历史版本](https://github.com/lumignfei/SnapStack/releases) · [0.2.0 更新说明](docs/releases/v0.2.0.md) · [问题反馈](https://github.com/lumignfei/SnapStack/issues)
+[下载 0.2.0 通用安装包](https://github.com/lumignfei/SnapStack/releases/download/v0.2.0/SnapStack-0.2.0-macOS-universal.zip) · [发布与校验文件](https://github.com/lumignfei/SnapStack/releases/tag/v0.2.0) · [0.2.0 更新说明](docs/releases/v0.2.0.md) · [问题反馈](https://github.com/lumignfei/SnapStack/issues)
 
-已发布的 v0.1.2 是旧版，不包含本页介绍的新界面与备注功能，快捷键也不同。体验当前版本请从源码构建。
+旧版 v0.1.2 的界面与快捷键不同，建议下载当前版本。升级前先处理截图队列并完全退出旧版，队列不会跨重启恢复。
 
 ## 能做什么
 
@@ -58,7 +58,9 @@ A native macOS screenshot queue built with SwiftUI and AppKit. Capture multiple 
 
 ## 安装与权限
 
-要求 **macOS 13.5+**。源码构建需要 **Swift 6 / Xcode 或 Command Line Tools**，无第三方 Swift 包依赖。
+下载上方 ZIP，解压后将 `SnapStack.app` 放到固定位置（建议“应用程序”），再打开。可使用发布页中的 `SHA256SUMS.txt` 核对下载文件。
+
+要求 **macOS 13.5+**。如需从源码构建，需要 **Swift 6 / Xcode 或 Command Line Tools**，无第三方 Swift 包依赖。
 
 ```sh
 git clone https://github.com/lumignfei/SnapStack.git
@@ -73,7 +75,7 @@ open dist/SnapStack.app
 
 首次使用按权限引导打开对应系统设置，授权后返回应用；部分系统要求退出并重开。可通过“更多操作 → 权限与使用引导”再次查看。
 
-历史下载版采用 **ad-hoc 临时签名，尚未进行 Developer ID 签名和公证**。下载版本可能触发 Gatekeeper；只在信任来源时按系统提示允许打开，不需要关闭系统安全保护。参见 [Apple 说明](https://support.apple.com/en-us/102445)。
+当前公开安装包采用 **ad-hoc 临时签名，尚未进行 Developer ID 签名和公证**。下载版本可能触发 Gatekeeper；只在信任来源时按系统提示允许打开，不需要关闭系统安全保护。参见 [Apple 说明](https://support.apple.com/en-us/102445)。
 
 ### 已开启权限，为什么仍提示授权？
 
