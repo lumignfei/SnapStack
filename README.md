@@ -1,10 +1,12 @@
 <p align="center"><img src="Resources/AppIcon-source.png" width="120" alt="SnapStack 连截图标"></p>
 
-# SnapStack / 连截
+# SnapStack / 连截 · macOS 连续截图与批量粘贴
 
 **macOS 连续截图工具：先收集、调整顺序，再一键粘贴。每张图片可选填文字备注。**
 
 A native macOS screenshot queue built with SwiftUI and AppKit. Capture multiple regions, reorder screenshots, add optional per-image notes, and paste them into another app in sequence. No account or cloud service required.
+
+[简体中文](README.md) · [English](README.en.md)
 
 ## 版本与下载
 
@@ -23,6 +25,14 @@ A native macOS screenshot queue built with SwiftUI and AppKit. Capture multiple 
 - 紧凑长条可收起为悬浮按钮；提供权限引导和悬停反馈。
 
 适合收集多个页面中的问题截图、给界面反馈配说明，以及向支持图片粘贴的应用整理材料。它不是录屏、OCR、图片标注或长期剪贴板历史工具。
+
+## 使用场景
+
+| 你要整理的内容 | 使用方式 |
+| --- | --- |
+| 软件问题反馈 | 连截几个复现画面，给其中一张补充“点击保存后没有反应” |
+| 界面参考 | 收集不同页面的按钮或布局，排序后给需要解释的图片加备注 |
+| 多图说明材料 | 先收集完整图片，再一次按顺序粘贴到支持图片的输入框 |
 
 ## 使用
 
@@ -98,6 +108,15 @@ bash scripts/package-release.sh
 构建产物位于 `.build/` 和 `dist/`，不提交到源码仓库。`Resources/AppIcon-source.png` 是图标源图，`AppIcon.icns` 是正式图标资源。`docs/` 中早期设计与检查文档属于历史记录，以本页和当前版本说明为准。
 
 ## FAQ
+
+**和普通截图有什么不同？** 连截主要增加当前会话的多图队列、拖动排序、可选备注和一次触发的顺序粘贴，不必每截一张就切换到目标应用。
+
+**支持 Windows 吗？** 当前仅支持 macOS，没有 Windows 或 Linux 版本。
+
+**是免费开源的吗？** 源码采用 MIT 许可，可以按许可条款使用和修改；无需账号或订阅。
+
+**支持 ChatGPT、微信吗？** 连截通过系统剪贴板和 Command-V 粘贴；这些应用当前版本的完整图文流程尚未专项验收，图片和文字的排列由接收应用决定。
+
 
 **可以只给一张图写备注吗？** 可以，备注是可选的；重排后仍属于原图。
 
